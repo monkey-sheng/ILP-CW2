@@ -20,18 +20,20 @@ public class Menus {
     
     public static final HttpClient client = HttpClient.newHttpClient();
     // format this endpoint with the corresponding port
-    public static final String menusEndpoint = "http://localhost:%s/menus/menus.json";
+    // according to piazza, this will always be localhost
+    public static final String menusEndpoint = "http://%s:%s/menus/menus.json";
     // the formatted URL for menus.json
     public final String menusURL;
     
     // according to a piazza question, "each item is sold by exactly one shop".
     // so using item names as keys should not be a problem
-    private Map<String, Integer> itemPenceMap = new HashMap<>();
+    private Map<String, Integer> itemPenceMap = new HashMap<>();  // price of item
+    private Map<String, String> itemLocationMap = new HashMap<>();  // where is the item sold
     
     public Menus(String server, String port) {
         this.server = server;
         this.port = port;
-        this.menusURL = String.format(menusEndpoint, port);
+        this.menusURL = String.format(menusEndpoint, server, port);
         HttpRequest request = HttpRequest.newBuilder().uri(URI.create(menusURL)).build();
         String responseStr = "";
         try {
@@ -60,8 +62,12 @@ public class Menus {
         Type menuEntryListType = new TypeToken<List<MenuEntry>>() {}.getType();
         ArrayList<MenuEntry> menuEntries = new Gson().fromJson(responseStr, menuEntryListType);
         for (MenuEntry entry : menuEntries) {
+            String location = entry.location;
             for (MenuEntry.MenuItem menuItem : entry.menu) {
+                // store price of each item
                 itemPenceMap.put(menuItem.item, menuItem.pence);
+                // store location (w3w) of item
+                itemLocationMap.put(menuItem.item, location);
             }
         }
     }
@@ -80,5 +86,24 @@ public class Menus {
             cost += this.itemPenceMap.get(item);
         }
         return cost;
+    }
+    
+    public int getDeliveryCost(List<String> items) {
+        int cost = DELIVERY_CHARGE;
+        for (String item : items) {
+            // what if item not in server response and the map
+            // error handling not needed according to piazza, working with valid input good enough
+            cost += this.itemPenceMap.get(item);
+        }
+        return cost;
+    }
+    
+    public List<String> getItemsLocation(List<String> items) {
+        ArrayList<String> locations = new ArrayList<>();
+        for (String item : items) {
+            // shouldn't get null as a result if item is valid
+            locations.add(itemLocationMap.get(item));
+        }
+        return locations;
     }
 }
