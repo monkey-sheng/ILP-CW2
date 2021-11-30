@@ -1,5 +1,9 @@
 package uk.ac.ed.inf;
 
+import com.mapbox.geojson.Point;
+
+import java.util.Objects;
+
 /**
  * Represents a point with its longitude and latitude
  */
@@ -28,6 +32,49 @@ public class LongLat {
     public LongLat(double longitude, double latitude) {
         this.longitude = longitude;
         this.latitude = latitude;
+    }
+    public LongLat(Point point) {
+        this.longitude = point.longitude();
+        this.latitude = point.latitude();
+    }
+    
+    public LongLat minus(LongLat otherLongLat) {
+        return new LongLat(this.longitude - otherLongLat.longitude,
+            this.latitude - otherLongLat.latitude);
+    }
+    public double crossProduct(LongLat otherLongLat) {
+        return this.longitude * otherLongLat.latitude - this.latitude * otherLongLat.longitude;
+    }
+    public int degreeTo(LongLat otherLongLat) {
+        int angle = (int) (Math.round(Math.toDegrees(Math.atan2(
+            otherLongLat.latitude - this.latitude, otherLongLat.longitude - this.longitude)) / 10) * 10);
+        return angle < 0 ? angle + 360 : angle;
+    }
+    
+    public Point toPoint() {
+        return Point.fromLngLat(this.longitude, this.latitude);
+    }
+    
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        LongLat longLat = (LongLat) o;
+        return Double.compare(longLat.longitude, longitude) == 0 &&
+            Double.compare(longLat.latitude, latitude) == 0;
+    }
+    
+    @Override
+    public int hashCode() {
+        return Objects.hash(longitude, latitude);
+    }
+    
+    @Override
+    public String toString() {
+        return "LongLat{" +
+            "longitude=" + longitude +
+            ", latitude=" + latitude +
+            '}';
     }
     
     /**

@@ -141,4 +141,11 @@ public class DBManager {
         }
         return items;
     }
+    
+    public void writeFlightpath(List<Flightpath> flightpaths) {
+        // TODO: drop and create the table
+    }
+    public void writeDeliveries(List<DeliveryOrder> deliveredOrders) {
+        // TODO: drop and create the table, check the columns to write
+    }
 }

@@ -98,11 +98,14 @@ public class Menus {
         return cost;
     }
     
-    public List<String> getItemsLocation(List<String> items) {
+    public List<String> getItemsLocations(List<String> items) {
         ArrayList<String> locations = new ArrayList<>();
         for (String item : items) {
             // shouldn't get null as a result if item is valid
-            locations.add(itemLocationMap.get(item));
+            String location = itemLocationMap.get(item);
+            if (!locations.contains(location)) {
+                locations.add(location);
+            }
         }
         return locations;
     }
