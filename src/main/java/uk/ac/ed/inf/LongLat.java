@@ -134,6 +134,8 @@ public class LongLat {
             return new LongLat(this.longitude, this.latitude);
         }
         else {
+            if (angle >= 360 || angle <= 0)
+                System.err.printf("movement angle %d out of bound\n", angle);
             double newLongitude = this.longitude + MOVE_DISTANCE * Math.cos(Math.toRadians(angle));
             double newLatitude = this.latitude + MOVE_DISTANCE * Math.sin(Math.toRadians(angle));
             return new LongLat(newLongitude, newLatitude);

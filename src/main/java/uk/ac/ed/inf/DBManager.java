@@ -1,5 +1,7 @@
 package uk.ac.ed.inf;
 
+import org.apache.derby.client.am.ClientPreparedStatement;
+
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -143,9 +145,39 @@ public class DBManager {
     }
     
     public void writeFlightpath(List<Flightpath> flightpaths) {
-        // TODO: drop and create the table
+        // drop and create table done beforehand
+        System.out.printf("INSERTING %d FLIGHTPATH RECORDS\n", flightpaths.size());
+        try {
+            for (Flightpath flightpath : flightpaths) {
+                PreparedStatement ps = this.dbConn.prepareStatement(
+                    "insert into flightpath values (?, ?, ?, ?, ?, ?)");
+                ps.setString(1, flightpath.orderNo);
+                ps.setDouble(2, flightpath.fromLng);
+                ps.setDouble(3, flightpath.fromLat);
+                ps.setInt(4, flightpath.angle);
+                ps.setDouble(5, flightpath.toLng);
+                ps.setDouble(6, flightpath.toLat);
+                ps.execute();
+            }
+            
+        }
+        catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
     public void writeDeliveries(List<DeliveryOrder> deliveredOrders) {
-        // TODO: drop and create the table, check the columns to write
+        // drop and create table done beforehand
+        try {
+            for (DeliveryOrder order : deliveredOrders) {
+                PreparedStatement ps = this.dbConn.prepareStatement(
+                    "insert into deliveries values (?, ?, ?)");
+                ps.setString(1, order.orderNo);
+                ps.setString(2, order.deliverTo);
+                ps.setInt(3, order.totalCost);
+            }
+        }
+        catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 }

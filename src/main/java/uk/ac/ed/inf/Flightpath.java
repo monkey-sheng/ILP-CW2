@@ -23,4 +23,12 @@ public class Flightpath {
         this.toLng = to.longitude;
         this.toLat = to.latitude;
     }
+    
+    public LongLat getFromLongLat() {
+        return new LongLat(this.fromLng, this.fromLat);
+    }
+    
+    public LongLat getToLongLat() {
+        return new LongLat(this.toLng, this.toLat);
+    }
 }

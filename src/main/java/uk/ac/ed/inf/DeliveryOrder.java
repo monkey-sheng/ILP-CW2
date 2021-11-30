@@ -2,6 +2,7 @@ package uk.ac.ed.inf;
 
 import java.sql.Date;
 import java.util.List;
+import java.util.Objects;
 
 public class DeliveryOrder {
     public String orderNo;
@@ -27,5 +28,18 @@ public class DeliveryOrder {
         if (locations.size() == 2) {
             this.pickup2 = what3Words.getLongLatFromWords(locations.get(1));
         }
+    }
+    
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        DeliveryOrder order = (DeliveryOrder) o;
+        return orderNo.equals(order.orderNo);
+    }
+    
+    @Override
+    public int hashCode() {
+        return Objects.hash(orderNo, deliveryDate, customer, deliverTo, items, pickup1, pickup2, deliveryLngLat, totalCost);
     }
 }
