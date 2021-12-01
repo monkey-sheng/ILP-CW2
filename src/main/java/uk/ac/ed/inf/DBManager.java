@@ -199,6 +199,7 @@ public class DBManager {
      */
     public void writeDeliveries(List<DeliveryOrder> deliveredOrders) {
         // drop and create table done beforehand
+        System.out.printf("Writing %d delivered orders to database\n", deliveredOrders.size());
         try {
             for (DeliveryOrder order : deliveredOrders) {
                 PreparedStatement ps = this.dbConn.prepareStatement(

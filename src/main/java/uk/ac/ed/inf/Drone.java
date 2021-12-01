@@ -74,7 +74,7 @@ public class Drone {
             start = nextOrder.pickup1;  // starting from the pickup location
         }
         if (optimised.size() != this.ordersToDeliver.size())
-            System.out.println("GREEDY OPTIMISATION RESULTED IN DIFFERENT NO. OF ORDERS");
+            System.err.println("GREEDY OPTIMISATION RESULTED IN DIFFERENT NO. OF ORDERS");
         this.ordersToDeliver = optimised;
     }
     
@@ -148,7 +148,7 @@ public class Drone {
             currentLngLat = doMoveToWaypoint(flightpaths, currentLngLat, orderNo, waypoint,
                 toHover);
         }
-        System.out.printf("try delivering order has %d in all way points\n", allWaypoints.size());
+        System.out.printf("try delivering order has %d way points in total\n", allWaypoints.size());
         return flightpaths;
     }
     

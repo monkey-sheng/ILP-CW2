@@ -85,14 +85,14 @@ public class Utils {
             int statusCode = response.statusCode();
             if (!(statusCode == 200)) {
                 // may be the server or bad request, fatal error
-                System.out.printf("got status code %d for URL %s, expecting 200 OK",
+                System.err.printf("got status code %d for URL %s, expecting 200 OK",
                     statusCode, URL);
                 System.exit(1); // Exit the application
             }
             responseStr = response.body();
         }
         catch (java.net.ConnectException e) {
-            System.out.println("Fatal error: Unable to connect to " +
+            System.err.println("Fatal error: Unable to connect to " +
                 server + " at port " + port + ".");
             System.exit(1); // Exit the application
         }
