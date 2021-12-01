@@ -207,6 +207,7 @@ public class DBManager {
                 ps.setString(1, order.orderNo);
                 ps.setString(2, order.deliverTo);
                 ps.setInt(3, order.totalCost);
+                ps.execute();
             }
         }
         catch (SQLException e) {
