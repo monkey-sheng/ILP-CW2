@@ -7,7 +7,7 @@ import uk.ac.ed.inf.LongLat;
 import java.util.*;
 import java.util.stream.Collectors;
 
-/*
+/**
  * Pathfinder using A* algorithm, finds waypoints for a given start and a given goal.
  * This means it takes into account the no-fly-zone, and will give a list of waypoints
  * for the drone to fly to, before reaching the goal.

@@ -4,6 +4,10 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Database manager responsible for operating with the derby database.
+ * Should be instantiated only once for every database.
+ */
 public class DBManager {
     public static final String JDBC_STRING_TO_FORMAT = "jdbc:derby://localhost:%s/derbyDB";
     private final Connection dbConn;

@@ -10,6 +10,10 @@ import java.net.http.HttpResponse;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Utility class for HTTP and some mathematical calculations, should not be instantiated,
+ * methods are all static.
+ */
 public class Utils {
     
     public static final HttpClient client = HttpClient.newHttpClient();

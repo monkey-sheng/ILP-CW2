@@ -1,8 +1,14 @@
 package uk.ac.ed.inf;
 
 
+/**
+ * The class for entry point of program.
+ */
 public class App
 {
+    /**
+     * @param args The entry point
+     */
     public static void main( String[] args )
     {
         String day = args[0];

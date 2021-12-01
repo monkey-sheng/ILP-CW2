@@ -5,6 +5,10 @@ import com.google.gson.reflect.TypeToken;
 
 import java.lang.reflect.Type;
 
+/**
+ * Responsible for handling location translation from w3w string encoding to LongLat
+ * on the go from webserver.
+ */
 public class What3WordsManager {
     public final String server, port;
     public static final String w3wEndpoint = "http://%s:%s/words/%s/%s/%s/details.json";

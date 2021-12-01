@@ -10,6 +10,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Responsible for operating with Geojson files, such as retrieving and processing data of geojson
+ * files, writing geojson files and related geo-computation.
+ */
 public class GeojsonManager {
     public final String server, port;
     //public static final HttpClient client = HttpClient.newHttpClient();

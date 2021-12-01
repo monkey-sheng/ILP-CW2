@@ -9,6 +9,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Responsible for marshalling, processing and retrieving data for order items.
+ * Should only be instantiated once per drone/webserver.
+ */
 public class Menus {
     public final int DELIVERY_CHARGE = 50;  // +50p for every delivery
     
@@ -23,6 +27,10 @@ public class Menus {
     private final Map<String, Integer> itemPenceMap = new HashMap<>();  // price of item
     private final Map<String, String> itemLocationMap = new HashMap<>();  // where is the item sold
     
+    /**
+     * @param server Server name.
+     * @param port Port of server.
+     */
     public Menus(String server, String port) {
         this.menusURL = String.format(menusEndpoint, server, port);
         String responseStr = Utils.sendHttpRequest(server, port, menusURL);

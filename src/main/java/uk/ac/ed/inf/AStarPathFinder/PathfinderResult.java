@@ -13,6 +13,10 @@ public class PathfinderResult {
     // waypoints to go to after starting at start and before arriving at goal
     public final List<LongLat> waypoints;
     
+    /**
+     * @param distance The found path's cost.
+     * @param waypoints List of nodes to reach goal node, including goal node.
+     */
     public PathfinderResult(double distance, List<LongLat> waypoints) {
         this.distance = distance;
         this.waypoints = waypoints;

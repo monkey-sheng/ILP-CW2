@@ -10,8 +10,8 @@ import uk.ac.ed.inf.AStarPathFinder.AStarPathfinder;
 import java.util.*;
 
 
-/*
- * Represents the drone itself, should encompass other objects
+/**
+ * Represents the drone itself, should encompass other class instances
  */
 public class Drone {
     private final String day, month, year;
@@ -32,6 +32,14 @@ public class Drone {
     // it will eventually hold all the orders that are delivered
     private List<DeliveryOrder> ordersToDeliver = new ArrayList<>();
     
+    /**
+     * @param server Server name.
+     * @param serverPort Port of server.
+     * @param dbPort Port of database.
+     * @param day Day of date to plan delivery.
+     * @param month Month of date to plan delivery.
+     * @param year Year of date to plan delivery.
+     */
     public Drone(
         String server, String serverPort, String dbPort, String day, String month,
         String year) {
@@ -48,8 +56,8 @@ public class Drone {
         this.geojsonManager = new GeojsonManager(server, serverPort);
         this.pathfinder = new AStarPathfinder(geojsonManager);
     }
-    
-    /*
+
+    /**
      * Populates the field allOrders as well as ordersToDeliver, which can be mutated later
      */
     public void getAllOrders() {
@@ -62,8 +70,39 @@ public class Drone {
         }
     }
     
-    public void planDelivery() {
-        // plan/optimise the delivery route/nodes, implements greedy TSP heuristics
+    /**
+     * Implements 2-opt optimisation for TSP. Has side effect of changing this.orderToDeliver.
+     */
+    private void Tsp2OptOptimisation() {
+        List<DeliveryOrder> toDeliver = new ArrayList<>(this.ordersToDeliver);
+        List<DeliveryOrder> tentativeToDeliver;
+        double currentTripDistance = getTripDistance(toDeliver);
+        Random random = new Random();
+        for (int i = 0; i < 200; i++) {
+            int order1Index = random.nextInt(toDeliver.size());
+            int order2Index = random.nextInt(toDeliver.size());
+            DeliveryOrder order1 = toDeliver.get(order1Index);
+            DeliveryOrder order2 = toDeliver.get(order2Index);
+            tentativeToDeliver = new ArrayList<>(toDeliver);
+            tentativeToDeliver.set(order1Index, order2);
+            tentativeToDeliver.set(order2Index, order1);
+            double newTripDistance = getTripDistance(tentativeToDeliver);
+            if (newTripDistance < currentTripDistance) {
+                // accept new trip
+                toDeliver = tentativeToDeliver;
+                currentTripDistance = newTripDistance;
+            }
+        }
+        this.ordersToDeliver = toDeliver;
+    }
+    
+    /**
+     * NOTE: 2-opt seems to be performing better, therefore use Tsp2OptOptimisation instead.
+     * This one also works.
+     * Implements greedy optimisation for TSP.
+     */
+    private void TspGreedyOptimisation() {
+        // old version of plan delivery
         List<DeliveryOrder> toDeliver = new ArrayList<>(this.ordersToDeliver);
         List<DeliveryOrder> optimised = new ArrayList<>();
         LongLat start = APPLETON_TOWER;
@@ -78,6 +117,46 @@ public class Drone {
         this.ordersToDeliver = optimised;
     }
     
+    /**
+     * @param ordersToDeliver The list of orders to calculate total trip (euclidean) distance
+     * @return The total trip (euclidean) distance
+     */
+    private double getTripDistance(List<DeliveryOrder> ordersToDeliver) {
+        LongLat currentPosition = APPLETON_TOWER;
+        double distance = 0;
+        for (DeliveryOrder order : ordersToDeliver) {
+            double cost = currentPosition.distanceTo(order.pickup1);
+            currentPosition = order.pickup1;
+            if (order.pickup2 != null) {
+                cost += currentPosition.distanceTo(order.pickup2);
+                currentPosition = order.pickup2;
+            }
+            cost += currentPosition.distanceTo(order.deliveryLngLat);
+            currentPosition = order.deliveryLngLat;
+            distance += cost;
+        }
+        return distance + currentPosition.distanceTo(APPLETON_TOWER);  // get back
+    }
+    
+    /**
+     * Plans/optimises the delivery route/nodes, used to implement greedy TSP heuristics.
+     * Turns out 2-opt is better, using that one instead.
+     * The real problem is Travelling Thief Problem, but to reduce complexity,
+     * treat it as TSP and use TSP heuristics.
+     */
+    public void planDelivery() {
+        // TspGreedyOptimisation();  // it seems 2 opt is performing better
+        Tsp2OptOptimisation();
+    }
+    
+    /**
+     * Implements the greedy heuristic of TSP by choosing the closest unvisited to the
+     * current starting position.
+     *
+     * @param fromLongLat The position to start from
+     * @param unvisited The list of (remaining) orders to deliver
+     * @return The chosen next DeliveryOrder
+     */
     private DeliveryOrder getClosestFromUnvisited(
         LongLat fromLongLat,
         List<DeliveryOrder> unvisited) {
@@ -231,6 +310,10 @@ public class Drone {
         return currentLngLat;
     }
     
+    /**
+     * The driving method of drone, which starts off everything else.
+     * Call this method in program entry point.
+     */
     public void performDeliveries() {
         getAllOrders();
         planDelivery();  // performed TSP greedy optimisation here
@@ -239,9 +322,10 @@ public class Drone {
         while (flightpaths.size() > MAX_MOVES) {
             System.out.printf("cannot finish delivery, need %d moves\n", flightpaths.size());
             System.out.println("reducing orders and retrying");
-            // remove 1 randomly and re-plan TSP
+            // remove most cost ineffective order and re-plan TSP
             // don't really need to remove the one with lowest value
-            this.ordersToDeliver.remove(new Random().nextInt(this.ordersToDeliver.size()));
+            removeMostCostIneffectiveOrder();
+            
             planDelivery();  // this results in mutated this.ordersToDeliver
             flightpaths = tryDeliveringOrders();
         }
@@ -277,6 +361,38 @@ public class Drone {
         String pathGeojsonString =
             FeatureCollection.fromFeature(Feature.fromGeometry(pathLine)).toJson();
         geojsonManager.writeGeojsonFile(day, month, year, pathGeojsonString);
+    }
+    
+    /**
+     * Remove an order which is most cost ineffective,
+     * i.e. lowest (monetary value / euclidean distance)
+     * This is called by planDelivery as part of the optimisation
+     */
+    private void removeMostCostIneffectiveOrder() {
+        LongLat currentPosition = APPLETON_TOWER;
+        double ratio = Double.POSITIVE_INFINITY;
+        DeliveryOrder mostIneffectiveOrder = null;
+        for (DeliveryOrder order : this.ordersToDeliver) {
+            double totalDistance = currentPosition.distanceTo(order.pickup1);
+            currentPosition = order.pickup1;
+            if (order.pickup2 != null) {
+                totalDistance += currentPosition.distanceTo(order.pickup2);
+                currentPosition = order.pickup2;
+            }
+            totalDistance += currentPosition.distanceTo(order.deliveryLngLat);
+            currentPosition = order.deliveryLngLat;
+            double currentRatio = order.totalCost / totalDistance;
+            if (currentRatio < ratio) {
+                mostIneffectiveOrder = order;
+                ratio = currentRatio;
+            }
+        }
+        if (mostIneffectiveOrder == null) {
+            System.err.println("COULDN'T FIND COST INEFFECTIVE ORDER");
+        }
+        boolean success = this.ordersToDeliver.remove(mostIneffectiveOrder);
+        if (!success)
+            System.err.println("COULDN'T REMOVE COST INEFFECTIVE ORDER");
     }
 }
 
