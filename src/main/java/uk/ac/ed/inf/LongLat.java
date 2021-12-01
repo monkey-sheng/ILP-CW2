@@ -21,7 +21,7 @@ public class LongLat {
     private static final double DISTANCE_TOLERANCE = 0.00015;
     
     // distance of every move for the drone, in degrees
-    private static final double MOVE_DISTANCE = 0.00015;
+    public static final double MOVE_DISTANCE = 0.00015;
     
     /**
      * Construct a point with given longitude and latitude.
@@ -36,6 +36,9 @@ public class LongLat {
     public LongLat(Point point) {
         this.longitude = point.longitude();
         this.latitude = point.latitude();
+    }
+    public LongLat copy() {
+        return new LongLat(this.longitude, this.latitude);
     }
     
     public LongLat minus(LongLat otherLongLat) {
@@ -134,7 +137,7 @@ public class LongLat {
             return new LongLat(this.longitude, this.latitude);
         }
         else {
-            if (angle >= 360 || angle <= 0)
+            if (angle >= 360 || angle < 0)
                 System.err.printf("movement angle %d out of bound\n", angle);
             double newLongitude = this.longitude + MOVE_DISTANCE * Math.cos(Math.toRadians(angle));
             double newLatitude = this.latitude + MOVE_DISTANCE * Math.sin(Math.toRadians(angle));

@@ -57,7 +57,7 @@ public class AStarPathfinder {
     
     private Map<LongLat, Map<LongLat, Double>> getPathGraph(LongLat start, LongLat goal) {
         List<LongLat> waypoints = geojsonManager.getWaypoints();
-        System.out.printf("waypoints list length %s\n", waypoints.size());
+        // System.out.printf("waypoints list length %s\n", waypoints.size());
         // make a deep copy then add start and goal nodes to it
         Map<LongLat, Map<LongLat, Double>> pathGraph =
             this.waypointGraph.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey,

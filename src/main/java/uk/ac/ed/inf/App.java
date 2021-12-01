@@ -50,5 +50,14 @@ public class App
         
         Drone drone = new Drone("localhost", serverPort, dbPort, day, month, year);
         drone.executePlan();
+        
+//        GeojsonManager geojsonManager = new GeojsonManager("localhost", serverPort);
+//        System.out.println(geojsonManager.lineCrossesNoFlyZone(new LongLat[] {new LongLat(-3.1907,
+//        55.9455),
+//            new LongLat(-3.1888, 55.9442)}));
+//
+//        System.out.println(geojsonManager.lineCrossesNoFlyZone(new LongLat[] {new LongLat(-3.1888,
+//        55.9442),
+//            new LongLat(-3.1907, 55.9455)}));
     }
 }
