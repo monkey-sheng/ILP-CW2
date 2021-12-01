@@ -5,7 +5,7 @@ import com.google.gson.reflect.TypeToken;
 
 import java.lang.reflect.Type;
 
-public class What3Words {
+public class What3WordsManager {
     public final String server, port;
     public static final String w3wEndpoint = "http://%s:%s/words/%s/%s/%s/details.json";
     
@@ -14,7 +14,7 @@ public class What3Words {
      * @param server The server name.
      * @param port The port of server.
      */
-    public What3Words(String server, String port) {
+    public What3WordsManager(String server, String port) {
         this.server = server;
         this.port = port;
         

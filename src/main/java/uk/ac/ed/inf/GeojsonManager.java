@@ -89,24 +89,25 @@ public class GeojsonManager {
     /**
      * Checks if a line segment is crossing the defined no fly zone. Starting and/or ending right
      * on the polygons' perimeters does NOT count as crossing.
-     * @param line Array of size 2 specifying the start and end for line segment.
+     * @param lineStart Starting position of line segment.
+     * @param lineEnd Ending position of line segment.
      * @return Whether the line crosses the no fly zone.
      */
-    public boolean lineCrossesNoFlyZone(LongLat[] line) {
+    public boolean lineCrossesNoFlyZone(LongLat lineStart, LongLat lineEnd) {
         for (LongLat[] perimeter : this.noFlyZonePerimeters) {
             // if the line given is actually right along a perimeter segment, no intersection
-            if ((line[0].equals(perimeter[0]) && line[1].equals(perimeter[1])) ||
-                (line[0].equals(perimeter[1]) && line[1].equals(perimeter[0]))) {
+            if ((lineStart.equals(perimeter[0]) && lineEnd.equals(perimeter[1])) ||
+                (lineStart.equals(perimeter[1]) && lineEnd.equals(perimeter[0]))) {
                 return false;
             }
         }
         // the line isn't a segment of the perimeters
         // then if both start and end of line segment are vertices, definitely crossed
-        if (this.waypoints.contains(line[0]) && this.waypoints.contains(line[1]))
+        if (this.waypoints.contains(lineStart) && this.waypoints.contains(lineEnd))
             return true;
         // normal check
         for (LongLat[] perimeter : this.noFlyZonePerimeters) {
-            if (Utils.lineSegmentIntersects(line, perimeter)) {
+            if (Utils.lineSegmentIntersects(new LongLat[] {lineStart, lineEnd}, perimeter)) {
                 return true;
             }
         }
@@ -114,13 +115,11 @@ public class GeojsonManager {
     }
     
     /**
-     * @param lineStart Starting position of line segment.
-     * @param lineEnd Ending position of line segment.
+     * @param line Array of size 2 specifying the start and end for line segment.
      * @return Whether the line crosses the no fly zone.
      */
-    public boolean lineCrossesNoFlyZone(LongLat lineStart, LongLat lineEnd) {
-        LongLat[] line = new LongLat[] {lineStart, lineEnd};
-        return lineCrossesNoFlyZone(line);
+    public boolean lineCrossesNoFlyZone(LongLat[] line) {
+        return lineCrossesNoFlyZone(line[0], line[1]);
     }
     
     

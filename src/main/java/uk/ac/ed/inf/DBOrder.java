@@ -6,10 +6,10 @@ import java.sql.Date;
  * Used in marshalling the database records of orders.
  */
 public class DBOrder {
-    public String orderNo;
-    public Date deliveryDate;
-    public String customer;  // matriculation string
-    public String deliverTo;  // w3w string
+    public final String orderNo;
+    public final Date deliveryDate;
+    public final String customer;  // matriculation string
+    public final String deliverTo;  // w3w string
     
     
     /**

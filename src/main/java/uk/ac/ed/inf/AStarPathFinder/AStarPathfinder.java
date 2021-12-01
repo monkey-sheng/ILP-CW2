@@ -17,20 +17,22 @@ public class AStarPathfinder {
     public final GeojsonManager geojsonManager;
     // in the form of graph[ll1][ll2] = distance from ll1 to ll2, +inf if cannot directly go to
     public final Map<LongLat, Map<LongLat, Double>> waypointGraph;
-    // this would be waypointGraph with start and goal node added
-    private Map<LongLat, Map<LongLat, Double>> pathGraph;
     
     /**
+     * Initialises an A* pathfinder.
+     * It will create a waypoint graph from the no fly zone polygon vertices, and will try to avoid
+     * connecting waypoints/nodes that are hard for the drone to maneuver from and to, since the
+     * drone can move only in a stiff manner (limited turning angles and fixed movement distance).
+     *
      * @param geojsonManager the GeojsonManager to be used for this object.
      */
     public AStarPathfinder(GeojsonManager geojsonManager) {
         this.geojsonManager = geojsonManager;
         List<LongLat> waypoints = geojsonManager.getWaypoints();
-        List<LongLat[]> perimeters = geojsonManager.getNoFlyZonePerimeters();
         
         Map<LongLat, Map<LongLat, Double>> waypointGraph = new HashMap<>();
         // populate the adjacency matrix/map
-        // TODO: DON'T CONNECT any vertex close to other polygon/each other
+        // check: DON'T CONNECT any vertices that are not in the clear
     
         for (LongLat waypoint : waypoints) {
             waypointGraph.put(waypoint, new HashMap<>());
@@ -40,20 +42,48 @@ public class AStarPathfinder {
                     waypointGraph.get(waypoint).put(otherWaypoint, 0.0);
                 }
                 else {
-                    if (geojsonManager.lineCrossesNoFlyZone(new LongLat[]
-                        {waypoint, otherWaypoint})) {
+                    if (geojsonManager.lineCrossesNoFlyZone(waypoint, otherWaypoint)) {
                         // no direct path, edge is +inf
                         waypointGraph.get(waypoint).put(otherWaypoint, Double.POSITIVE_INFINITY);
                     }
+                    // has a direct path between the two, check if it is hard for drone to move to
                     else {
-                        // edge is the distance
-                        waypointGraph.get(waypoint).put(otherWaypoint,
-                            waypoint.distanceTo(otherWaypoint));
+                        // probe the surroundings
+                        if (isHardToMoveTo(waypoint, otherWaypoint)) {
+                            // treat it as if no direct path, edge is +inf
+                            waypointGraph.get(waypoint).put(otherWaypoint, Double.POSITIVE_INFINITY);
+                        }
+                        else {
+                            // edge is the distance
+                            waypointGraph.get(waypoint).put(otherWaypoint,
+                                waypoint.distanceTo(otherWaypoint));
+                        }
                     }
                 }
             }
         }
         this.waypointGraph = waypointGraph;
+    }
+    
+    /**
+     * Using straight line probes with the move distance as length to check its surroundings.
+     * Note that going from a vertex into the polygon doesn't count as crossing no fly zone,
+     * which ought not be the case, but without proper point-in-polygon detection, there is a
+     * workaround, which is to lower the number of crossing count.
+     * @param waypoint1 Starting waypoint
+     * @param waypoint2 Ending waypoint
+     * @return Whether or not it is considered hard to move
+     */
+    private boolean isHardToMoveTo(LongLat waypoint1, LongLat waypoint2) {
+        int angle = waypoint1.degreeTo(waypoint2);
+        int crossCount = 0;
+        for (int offset = -90; offset <= 90; offset += 10) {
+            LongLat pseudoEndLngLat = waypoint1.nextPosition(angle + offset);
+            if (geojsonManager.lineCrossesNoFlyZone(waypoint1, pseudoEndLngLat)) {
+                crossCount += 1;
+            }
+        }
+        return (crossCount >= 3);  // 3 is purely judicious at the moment, but should work
     }
     
     /**
@@ -67,8 +97,7 @@ public class AStarPathfinder {
      */
     private Map<LongLat, Map<LongLat, Double>> getPathGraph(LongLat start, LongLat goal) {
         List<LongLat> waypoints = geojsonManager.getWaypoints();
-        // System.out.printf("waypoints list length %s\n", waypoints.size());
-        // make a deep copy then add start and goal nodes to it
+        // make a copy then add start and goal nodes to it
         Map<LongLat, Map<LongLat, Double>> pathGraph =
             this.waypointGraph.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey,
                 e->new HashMap<>(e.getValue())));
@@ -76,29 +105,11 @@ public class AStarPathfinder {
         pathGraph.put(goal, new HashMap<>());
         for (LongLat waypoint : waypoints) {
             // connect the start node with others
-            if (geojsonManager.lineCrossesNoFlyZone(new LongLat[]
-                {start, waypoint})) {
-                // no direct path, edge is +inf
-                pathGraph.get(start).put(waypoint, Double.POSITIVE_INFINITY);
-                pathGraph.get(waypoint).put(start, Double.POSITIVE_INFINITY);
-            }
-            else {
-                // edge is the distance
-                pathGraph.get(start).put(waypoint, start.distanceTo(waypoint));
-                pathGraph.get(waypoint).put(start, waypoint.distanceTo(start));
-            }
+            connectWithGraphNode(start, pathGraph, waypoint, start.distanceTo(waypoint),
+                waypoint.distanceTo(start));
             // connect the goal node with others
-            if (geojsonManager.lineCrossesNoFlyZone(new LongLat[]
-                {waypoint, goal})) {
-                // no direct path, edge is +inf
-                pathGraph.get(waypoint).put(goal, Double.POSITIVE_INFINITY);
-                pathGraph.get(goal).put(waypoint, Double.POSITIVE_INFINITY);
-            }
-            else {
-                // edge is the distance
-                pathGraph.get(waypoint).put(goal, goal.distanceTo(waypoint));
-                pathGraph.get(goal).put(waypoint, waypoint.distanceTo(goal));
-            }
+            connectWithGraphNode(waypoint, pathGraph, goal, goal.distanceTo(waypoint),
+                waypoint.distanceTo(goal));
         }
         // connect start node with goal node
         double startToGoalDistance = geojsonManager.lineCrossesNoFlyZone(new LongLat[]
@@ -109,10 +120,31 @@ public class AStarPathfinder {
         // connect with self
         pathGraph.get(start).put(start, 0.0);
         pathGraph.get(goal).put(goal, 0.0);
-        // System.out.printf("pathGraph keys length %s\n", pathGraph.size());
-        // System.out.printf("start node num of edges %s\n", pathGraph.get(start).size());
-        // System.out.printf("goal node num of edges %s\n", pathGraph.get(goal).size());
         return pathGraph;
+    }
+    
+    /**
+     * Utility method used by getPathGraph, intended to connect the start and goal node to the
+     * existing waypoint graph for use in findPath.
+     * @param nodeToAdd The node to add to the graph.
+     * @param pathGraph The existing graph.
+     * @param waypointInGraph The waypoint of pathGraph which is to be connected with.
+     * @param distanceFromNode Distance from nodeToAdd to waypointInGraph.
+     * @param distanceToNode Distance from waypointInGraph to nodeToAdd.
+     */
+    private void connectWithGraphNode(LongLat nodeToAdd, Map<LongLat, Map<LongLat, Double>> pathGraph,
+                                      LongLat waypointInGraph,
+                                      double distanceFromNode, double distanceToNode) {
+        if (geojsonManager.lineCrossesNoFlyZone(nodeToAdd, waypointInGraph)) {
+            // no direct path, edge is +inf
+            pathGraph.get(nodeToAdd).put(waypointInGraph, Double.POSITIVE_INFINITY);
+            pathGraph.get(waypointInGraph).put(nodeToAdd, Double.POSITIVE_INFINITY);
+        }
+        else {
+            // edge is the distance
+            pathGraph.get(nodeToAdd).put(waypointInGraph, distanceFromNode);
+            pathGraph.get(waypointInGraph).put(nodeToAdd, distanceToNode);
+        }
     }
     
     /**
@@ -123,7 +155,8 @@ public class AStarPathfinder {
      * @return result containing the distance/cost, and list of way points in between.
      */
     public PathfinderResult findPath(LongLat start, LongLat goal) {
-        this.pathGraph = getPathGraph(start, goal);
+        // this would be waypointGraph with start and goal node added
+        Map<LongLat, Map<LongLat, Double>> pathGraph = getPathGraph(start, goal);
         Map<LongLat, Double> closedSet = new HashMap<>();
         // open set is a priority queue based on the f cost of nodes
         PriorityQueue<LongLat> openSet = new PriorityQueue<>(

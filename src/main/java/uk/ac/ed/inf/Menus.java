@@ -10,8 +10,6 @@ import java.util.List;
 import java.util.Map;
 
 public class Menus {
-    public final String server;
-    public final String port;
     public final int DELIVERY_CHARGE = 50;  // +50p for every delivery
     
     // format this endpoint with the corresponding port
@@ -26,8 +24,6 @@ public class Menus {
     private final Map<String, String> itemLocationMap = new HashMap<>();  // where is the item sold
     
     public Menus(String server, String port) {
-        this.server = server;
-        this.port = port;
         this.menusURL = String.format(menusEndpoint, server, port);
         String responseStr = Utils.sendHttpRequest(server, port, menusURL);
 

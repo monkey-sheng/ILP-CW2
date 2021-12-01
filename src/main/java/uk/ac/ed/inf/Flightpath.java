@@ -10,17 +10,6 @@ public class Flightpath {
     public final int angle;
     public final double toLng, toLat;
     
-    // TODO
-    public Flightpath(String orderNo, double fromLng, double fromLat, int angle, double toLng,
-                      double toLat) {
-        this.orderNo = orderNo;
-        this.fromLng = fromLng;
-        this.fromLat = fromLat;
-        this.angle = angle;
-        this.toLng = toLng;
-        this.toLat = toLat;
-    }
-    
     /**
      * @param orderNo the order to which the drone is associated when this flightpath took place.
      * @param from The position of drone flying from.

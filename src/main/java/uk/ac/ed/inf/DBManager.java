@@ -174,13 +174,8 @@ public class DBManager {
      */
     public void writeFlightpath(List<Flightpath> flightpaths) {
         // drop and create table done beforehand
-        System.out.printf("INSERTING %d FLIGHTPATH RECORDS\n", flightpaths.size());
         try {
             for (Flightpath flightpath : flightpaths) {
-                // TODO
-                if (flightpath.angle == -999) {
-                    System.out.println("DB found that drone HOVERED");
-                }
                 PreparedStatement ps = this.dbConn.prepareStatement(
                     "insert into flightpath values (?, ?, ?, ?, ?, ?)");
                 ps.setString(1, flightpath.orderNo);
