@@ -4,16 +4,30 @@ import java.sql.Date;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * Encapsulates data needed for the drone to perform deliveries. Contains information from DBOrder,
+ * as well as relevant data from database. This object relies on the fact that there can be at
+ * most 2 shops the drone needs to visit to collect all ordered items.
+ */
 public class DeliveryOrder {
     public String orderNo;
     public Date deliveryDate;
     public String customer;  // matriculation string
-    public String deliverTo;  //w3w string
-    List<String> items;
+    public String deliverTo;  // w3w string
+    List<String> items;  // list of item names, fetched from database
     public LongLat pickup1 = null, pickup2 = null;  // can be from 2 stores max
     public LongLat deliveryLngLat;
     public int totalCost;
     
+    /**
+     * @param orderNo
+     * @param deliveryDate
+     * @param customer
+     * @param deliverTo
+     * @param dbManager the DBManager instance to be used to fetch data from database.
+     * @param menus the Menus instance to
+     * @param what3Words
+     */
     public DeliveryOrder(String orderNo, Date deliveryDate, String customer, String deliverTo,
                          DBManager dbManager, Menus menus, What3Words what3Words) {
         this.orderNo = orderNo;

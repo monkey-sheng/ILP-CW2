@@ -8,8 +8,8 @@ import java.util.Objects;
  * Represents a point with its longitude and latitude
  */
 public class LongLat {
-    public double longitude;
-    public double latitude;
+    public final double longitude;
+    public final double latitude;
     
     // drone confinement area constants
     private static final double LONGITUDE_CONFINEMENT_MIN = -3.192473;
@@ -25,7 +25,6 @@ public class LongLat {
     
     /**
      * Construct a point with given longitude and latitude.
-     *
      * @param longitude longitude of the point.
      * @param latitude  latitude of the point.
      */
@@ -33,27 +32,50 @@ public class LongLat {
         this.longitude = longitude;
         this.latitude = latitude;
     }
+    
+    /**
+     * Construct a point from the mapbox Point object.
+     * @param point A mapbox Point instance.
+     */
     public LongLat(Point point) {
         this.longitude = point.longitude();
         this.latitude = point.latitude();
     }
-    public LongLat copy() {
-        return new LongLat(this.longitude, this.latitude);
-    }
     
+    /**
+     * A vector subtraction operation.
+     * @param otherLongLat The other LongLat instance (as vector)
+     * @return The (vector) result of subtraction, will be pointing to this from otherLongLat.
+     */
     public LongLat minus(LongLat otherLongLat) {
         return new LongLat(this.longitude - otherLongLat.longitude,
             this.latitude - otherLongLat.latitude);
     }
+    
+    /**
+     * A vector cross product operation. Defined as (Ax*By - Ay * Bx).
+     * @param otherLongLat The (vector) LongLat to cross with this.
+     * @return Scalar value of taking cross product.
+     */
     public double crossProduct(LongLat otherLongLat) {
         return this.longitude * otherLongLat.latitude - this.latitude * otherLongLat.longitude;
     }
+    
+    /**
+     * Computes a valid (multiple of 10 and within [0, 360), as required) movement angle,
+     * that points from this to otherLongLat as close as possible.
+     * @param otherLongLat The other LongLat to which the movement angle is computed.
+     * @return Approximate movement angle in degrees.
+     */
     public int degreeTo(LongLat otherLongLat) {
         int angle = (int) (Math.round(Math.toDegrees(Math.atan2(
             otherLongLat.latitude - this.latitude, otherLongLat.longitude - this.longitude)) / 10) * 10);
         return angle < 0 ? angle + 360 : angle;
     }
     
+    /**
+     * @return A mapbox Point instance with the same coordinates.
+     */
     public Point toPoint() {
         return Point.fromLngLat(this.longitude, this.latitude);
     }
@@ -82,7 +104,6 @@ public class LongLat {
     
     /**
      * Whether or not the point is <i>strictly</i> within the defined confinement area.
-     *
      * @return True if within confinement, false if not.
      */
     public boolean isConfined() {
@@ -93,7 +114,7 @@ public class LongLat {
     }
     
     /**
-     * Computes the Pythagorean distance (in degrees) between two points.
+     * Computes the Pythagorean distance between two points.
      * Treating all the points as if they are on the same plane, instead of a sphere.
      * @param otherPoint to which distance is calculated from this point.
      * @return distance from this point to the given point.
@@ -106,7 +127,6 @@ public class LongLat {
     /**
      * Definition of p1 being close to p2: distance between p1 and p2 is
      * <i>strictly</i> less than the distance tolerance (of 0.00015 degrees).
-     *
      * @param otherPoint the point being compared to this point.
      * @return True if they are close, false if not.
      */
@@ -131,14 +151,14 @@ public class LongLat {
         if (angle == -999) {
             return new LongLat(this.longitude, this.latitude);
         }
-        // case for invalid angle, behaviour is undefined, might change later
+        // case for invalid angle, behaviour is undefined
         else if (angle % 10 != 0) {
-            System.out.printf("angle %d not a multiple of 10, not moving%n", angle);
+            System.err.printf("angle %d not a multiple of 10, not moving%n", angle);
             return new LongLat(this.longitude, this.latitude);
         }
         else {
-            if (angle >= 360 || angle < 0)
-                System.err.printf("movement angle %d out of bound\n", angle);
+            // this should not occur for drone movements, but may for some interim calculations
+            // will not lead to errors though
             double newLongitude = this.longitude + MOVE_DISTANCE * Math.cos(Math.toRadians(angle));
             double newLatitude = this.latitude + MOVE_DISTANCE * Math.sin(Math.toRadians(angle));
             return new LongLat(newLongitude, newLatitude);

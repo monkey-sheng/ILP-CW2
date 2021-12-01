@@ -2,7 +2,6 @@ package uk.ac.ed.inf.AStarPathFinder;
 
 
 import uk.ac.ed.inf.GeojsonManager;
-import uk.ac.ed.inf.GeometryUtils;
 import uk.ac.ed.inf.LongLat;
 
 import java.util.*;
@@ -12,18 +11,18 @@ import java.util.stream.Collectors;
  * Pathfinder using A* algorithm, finds waypoints for a given start and a given goal.
  * This means it takes into account the no-fly-zone, and will give a list of waypoints
  * for the drone to fly to, before reaching the goal.
+ * Waypoints are in fact vertices of the no fly zone polygons.
  */
 public class AStarPathfinder {
     public final GeojsonManager geojsonManager;
     // in the form of graph[ll1][ll2] = distance from ll1 to ll2, +inf if cannot directly go to
     public final Map<LongLat, Map<LongLat, Double>> waypointGraph;
-    // this would be waypointGraph with start and goal node
+    // this would be waypointGraph with start and goal node added
     private Map<LongLat, Map<LongLat, Double>> pathGraph;
-    ////private Map<LongLat, Double> closedSet = new HashMap<>();
-    ////private PriorityQueue<LongLat> openSet;
-    // records the path in reversed order
-    ////private Map<LongLat, LongLat> cameFrom = new HashMap<>();
     
+    /**
+     * @param geojsonManager the GeojsonManager to be used for this object.
+     */
     public AStarPathfinder(GeojsonManager geojsonManager) {
         this.geojsonManager = geojsonManager;
         List<LongLat> waypoints = geojsonManager.getWaypoints();
@@ -31,6 +30,8 @@ public class AStarPathfinder {
         
         Map<LongLat, Map<LongLat, Double>> waypointGraph = new HashMap<>();
         // populate the adjacency matrix/map
+        // TODO: DON'T CONNECT any vertex close to other polygon/each other
+    
         for (LongLat waypoint : waypoints) {
             waypointGraph.put(waypoint, new HashMap<>());
             for (LongLat otherWaypoint : waypoints) {
@@ -55,6 +56,15 @@ public class AStarPathfinder {
         this.waypointGraph = waypointGraph;
     }
     
+    /**
+     * Returns a weighted path graph, constructed with nodes from all waypoints plus the starting
+     * and goal node. However, the edge cost is only a heuristic for the actual path cost,
+     * since the drone cannot move in arbitrary straight lines.
+     * @param start the starting location.
+     * @param goal the goal/destination location.
+     * @return A map in the form that pathGraph[point1][point2] is the edge cost of
+     * point1 to point2.
+     */
     private Map<LongLat, Map<LongLat, Double>> getPathGraph(LongLat start, LongLat goal) {
         List<LongLat> waypoints = geojsonManager.getWaypoints();
         // System.out.printf("waypoints list length %s\n", waypoints.size());
@@ -106,26 +116,27 @@ public class AStarPathfinder {
     }
     
     /**
+     * Find a path from start to goal, the returned result is the nodes to visit to reach goal,
+     * including goal node itself, but not the start node.
      * @param start starting point/LongLat
      * @param goal to reach point/LongLat
      * @return result containing the distance/cost, and list of way points in between.
      */
     public PathfinderResult findPath(LongLat start, LongLat goal) {
-        // System.out.printf("Finding path from %s to %s", start, goal);
         this.pathGraph = getPathGraph(start, goal);
         Map<LongLat, Double> closedSet = new HashMap<>();
+        // open set is a priority queue based on the f cost of nodes
         PriorityQueue<LongLat> openSet = new PriorityQueue<>(
             new AStarNodeComparator(closedSet, goal));
         closedSet.put(start, 0.0);
         openSet.add(start);
-        // key is the result of travelling from value
+        // key is the result of travelling from value, used when reconstructing the path
         Map<LongLat, LongLat> cameFrom = new HashMap<>();
         while (!openSet.isEmpty()) {
-            // System.out.printf("openSet size %s\n", openSet.size());
             LongLat current = openSet.poll();
-            // System.out.printf("current from priority queue %s", current);
             if (current.equals(goal))
                 break;
+            // for each neighbour node of current node
             for (LongLat neighbour : pathGraph.get(current).keySet()) {
                 double newCost = closedSet.get(current) + pathGraph.get(current).get(neighbour);
                 if (!closedSet.containsKey(neighbour) || newCost < closedSet.get(neighbour)) {
@@ -142,14 +153,24 @@ public class AStarPathfinder {
             path.add(thisNode);
             thisNode = cameFrom.get(thisNode);
         }
-        Collections.reverse(path);
+        Collections.reverse(path);  // it is now in the correct visiting order
         return new PathfinderResult(closedSet.get(goal), path);
     }
 }
 
+
+/**
+ * This comparator compares A* nodes based on their corresponding f cost.
+ */
 class AStarNodeComparator implements Comparator<LongLat> {
     private final Map<LongLat, Double> closedSet;
     private final LongLat goal;
+    
+    /**
+     * The closed set needs to be mutated/updated by the pathfinding algorithm.
+     * @param closedSet the (referenced) closed set which contains the g costs.
+     * @param goal the goal node to which h cost is computed.
+     */
     public AStarNodeComparator(Map<LongLat, Double> closedSet, LongLat goal) {
         this.closedSet = closedSet;
         this.goal = goal;
@@ -157,7 +178,7 @@ class AStarNodeComparator implements Comparator<LongLat> {
     
     /**
      * Compares priority using the f cost (= g cost + h cost).
-     * Retrieves g cost from closeSet and add euclidean distance between them.
+     * Retrieves g cost from closeSet and use euclidean distance between nodes as h cost.
      * @param longLat1 one element to compare
      * @param longLat2 the other element to compare
      * @return negative if longLat1 < longLat2, otherwise positive, or 0 if equal

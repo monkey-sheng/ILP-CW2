@@ -6,7 +6,6 @@ import com.mapbox.geojson.FeatureCollection;
 import com.mapbox.geojson.LineString;
 import com.mapbox.geojson.Point;
 import uk.ac.ed.inf.AStarPathFinder.AStarPathfinder;
-import uk.ac.ed.inf.TSPDeliveryPlanner.TSPDeliveryPlanner;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -26,7 +25,6 @@ public class Drone {
     private final What3Words what3Words;
     private final GeojsonManager geojsonManager;
     private final AStarPathfinder pathfinder;
-    private final TSPDeliveryPlanner deliveryPlanner;
     
     private List<DeliveryOrder> allOrders = new ArrayList<>();
     // TODO: this will have items reduced if unable to deliver all of them
@@ -53,7 +51,6 @@ public class Drone {
         this.what3Words = new What3Words(server, serverPort);
         this.geojsonManager = new GeojsonManager(server, serverPort);
         this.pathfinder = new AStarPathfinder(geojsonManager);
-        this.deliveryPlanner = new TSPDeliveryPlanner();
     }
     
     /*
@@ -218,7 +215,6 @@ public class Drone {
             orderNos.add("");
             allWaypoints.add(appletonWaypoint);
         }
-        //TODO: populate flightpath
         currentLngLat = APPLETON_TOWER;
         for (int i = 0; i < allWaypoints.size(); i++) {
             String orderNo = orderNos.get(i);
@@ -228,12 +224,12 @@ public class Drone {
         }
         
         System.out.printf("try delivering order has %d in all way points\n", allWaypoints.size());
-        LineString pathLine = LineString.fromLngLats(allWaypoints.stream().map(LongLat::toPoint).
-            collect(Collectors.toList()));
-        String pathGeojsonString =
-            FeatureCollection.fromFeature(Feature.fromGeometry(pathLine)).toJson();
-        geojsonManager.writeGeojsonFile("tryDelivery waypoints" + day, month, year,
-            pathGeojsonString);
+//        LineString pathLine = LineString.fromLngLats(allWaypoints.stream().map(LongLat::toPoint).
+//            collect(Collectors.toList()));
+//        String pathGeojsonString =
+//            FeatureCollection.fromFeature(Feature.fromGeometry(pathLine)).toJson();
+//        geojsonManager.writeGeojsonFile("tryDelivery waypoints" + day, month, year,
+//            pathGeojsonString);
         return flightpaths;
     }
     
@@ -243,7 +239,6 @@ public class Drone {
         LongLat waypoint = allWaypoints.get(index);
         
         while (!currentLngLat.closeTo(waypoint)) {
-            System.out.println("WHILE LOOP START");
             double bestDistance = Double.POSITIVE_INFINITY;
             int selectedAngle1 = -999;
             int selectedAngle2 = -999;

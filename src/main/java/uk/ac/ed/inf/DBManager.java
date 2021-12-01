@@ -1,19 +1,17 @@
 package uk.ac.ed.inf;
 
-import org.apache.derby.client.am.ClientPreparedStatement;
-
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
 public class DBManager {
-    private final String jdbcString;
+    public static final String JDBC_STRING_TO_FORMAT = "jdbc:derby://localhost:%s/derbyDB";
     private final Connection dbConn;
     
-    private final String createTableDeliveriesStmt =
+    private static final String createTableDeliveriesStmt =
         "create table deliveries(orderNo char(8), " +
             "deliveredTo varchar(19), costInPence int)";
-    private final String createTableFlightpathStmt =
+    private static final String createTableFlightpathStmt =
         "create table flightpath(orderNo char(8), " +
             "fromLongitude double, " +
             "fromLatitude double, " +
@@ -21,8 +19,12 @@ public class DBManager {
             "toLongitude double, " +
             "toLatitude double)";
     
+    /**
+     * Initialises the database connection for later operations.
+     * @param dbPort The database port.
+     */
     public DBManager(String dbPort) {
-        this.jdbcString = String.format("jdbc:derby://localhost:%s/derbyDB", dbPort);
+        String jdbcString = String.format(JDBC_STRING_TO_FORMAT, dbPort);
         Connection conn = null;
         try {
             conn = DriverManager.getConnection(jdbcString);
@@ -35,6 +37,10 @@ public class DBManager {
         this.dbConn = conn;
     }
     
+    /**
+     * @param tableName the name of table in database.
+     * @param createTableStmt the SQL statement to execute to create the table.
+     */
     private void dropAndCreateTable(String tableName, String createTableStmt) {
         DatabaseMetaData dbMetadata = null;
         ResultSet resultSet = null;
@@ -78,7 +84,6 @@ public class DBManager {
         }
         
         // table is now dropped (or doesn't exist in the first place), create table
-        
         try {
             Statement stmt = this.dbConn.createStatement();
             stmt.execute(createTableStmt);
@@ -90,15 +95,29 @@ public class DBManager {
         }
     }
     
+    /**
+     * Drop and create the "deliveries" table as asked.
+     */
     public void dropAndCreateTableDeliveries() {
-        this.dropAndCreateTable("deliveries", this.createTableDeliveriesStmt);
+        this.dropAndCreateTable("deliveries", createTableDeliveriesStmt);
     }
     
+    /**
+     * Drop and create the "flightpath" table as asked.
+     */
     public void dropAndCreateTableFlightpath() {
-        this.dropAndCreateTable("flightpath", this.createTableFlightpathStmt);
+        this.dropAndCreateTable("flightpath", createTableFlightpathStmt);
     }
     
+    /**
+     * Gets all orders placed for a given date. Marshall the database records.
+     * @param day day of date.
+     * @param month month of date.
+     * @param year year of date.
+     * @return A list of all orders in the database
+     */
     public List<DBOrder> getOrdersForDay(String day, String month, String year) {
+        // needs to be in this format to construct Date object
         String dateStr = year + "-" + month + "-" + day;
         Date date = Date.valueOf(dateStr);
         final String query = "select * from orders where deliveryDate=(?)";
@@ -125,6 +144,11 @@ public class DBManager {
         return dbOrders;
     }
     
+    /**
+     * Gets the items within an order by the order's orderNo.
+     * @param No the order's orderNo.
+     * @return A list of items (String of item names).
+     */
     public List<String> getOrderItemsForNo(String No) {
         ArrayList<String> items = new ArrayList<>();
         try {
@@ -144,11 +168,19 @@ public class DBManager {
         return items;
     }
     
+    /**
+     * Writes the flightpaths to the "flightpath" database table, as asked.
+     * @param flightpaths List of Flightpath representing all the moves it made.
+     */
     public void writeFlightpath(List<Flightpath> flightpaths) {
         // drop and create table done beforehand
         System.out.printf("INSERTING %d FLIGHTPATH RECORDS\n", flightpaths.size());
         try {
             for (Flightpath flightpath : flightpaths) {
+                // TODO
+                if (flightpath.angle == -999) {
+                    System.out.println("DB found that drone HOVERED");
+                }
                 PreparedStatement ps = this.dbConn.prepareStatement(
                     "insert into flightpath values (?, ?, ?, ?, ?, ?)");
                 ps.setString(1, flightpath.orderNo);
@@ -165,6 +197,11 @@ public class DBManager {
             e.printStackTrace();
         }
     }
+    
+    /**
+     * Writes the delivered orders to the "delivered" database table, as asked.
+     * @param deliveredOrders A list of orders that have been delivered.
+     */
     public void writeDeliveries(List<DeliveryOrder> deliveredOrders) {
         // drop and create table done beforehand
         try {
