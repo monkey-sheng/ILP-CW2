@@ -14,8 +14,9 @@ public class DeliveryOrder {
     public final Date deliveryDate;
     public final String customer;  // matriculation string
     public final String deliverTo;  // w3w string
-    final List<String> items;  // list of item names, fetched from database
-    public LongLat pickup1 = null, pickup2 = null;  // can be from 2 stores max
+    public final List<String> items;  // list of item names, fetched from database
+    private LongLat pickup1 = null;
+    private LongLat pickup2 = null;  // can be from 2 stores max
     public final LongLat deliveryLngLat;
     public final int totalCost;
     
@@ -55,5 +56,13 @@ public class DeliveryOrder {
     @Override
     public int hashCode() {
         return Objects.hash(orderNo, deliveryDate, customer, deliverTo, items, pickup1, pickup2, deliveryLngLat, totalCost);
+    }
+    
+    public LongLat getPickup1() {
+        return pickup1;
+    }
+    
+    public LongLat getPickup2() {
+        return pickup2;
     }
 }

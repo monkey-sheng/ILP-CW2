@@ -21,7 +21,7 @@ public class LongLat {
     private static final double DISTANCE_TOLERANCE = 0.00015;
     
     // distance of every move for the drone, in degrees
-    public static final double MOVE_DISTANCE = 0.00015;
+    private static final double MOVE_DISTANCE = 0.00015;
     
     /**
      * Construct a point with given longitude and latitude.

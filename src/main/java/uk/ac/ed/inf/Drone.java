@@ -48,8 +48,6 @@ public class Drone {
         this.year = year;
         
         this.dbManager = new DBManager(dbPort);
-        dbManager.dropAndCreateTableDeliveries();
-        dbManager.dropAndCreateTableFlightpath();
         
         this.menus = new Menus(server, serverPort);
         this.what3WordsManager = new What3WordsManager(server, serverPort);
@@ -60,7 +58,7 @@ public class Drone {
     /**
      * Populates the field allOrders as well as ordersToDeliver, which can be mutated later
      */
-    public void getAllOrders() {
+    private void getAllOrders() {
         List<DBOrder> dbOrders = dbManager.getOrdersForDay(day, month, year);
         for (DBOrder dbOrder : dbOrders) {
             this.allOrders.add(new DeliveryOrder(dbOrder.orderNo, dbOrder.deliveryDate,
@@ -110,7 +108,7 @@ public class Drone {
             DeliveryOrder nextOrder = getClosestFromUnvisited(start, toDeliver);
             optimised.add(nextOrder);
             toDeliver.remove(nextOrder);
-            start = nextOrder.pickup1;  // starting from the pickup location
+            start = nextOrder.getPickup1();  // starting from the pickup location
         }
         if (optimised.size() != this.ordersToDeliver.size())
             System.err.println("GREEDY OPTIMISATION RESULTED IN DIFFERENT NO. OF ORDERS");
@@ -125,11 +123,11 @@ public class Drone {
         LongLat currentPosition = APPLETON_TOWER;
         double distance = 0;
         for (DeliveryOrder order : ordersToDeliver) {
-            double cost = currentPosition.distanceTo(order.pickup1);
-            currentPosition = order.pickup1;
-            if (order.pickup2 != null) {
-                cost += currentPosition.distanceTo(order.pickup2);
-                currentPosition = order.pickup2;
+            double cost = currentPosition.distanceTo(order.getPickup1());
+            currentPosition = order.getPickup1();
+            if (order.getPickup2() != null) {
+                cost += currentPosition.distanceTo(order.getPickup2());
+                currentPosition = order.getPickup2();
             }
             cost += currentPosition.distanceTo(order.deliveryLngLat);
             currentPosition = order.deliveryLngLat;
@@ -144,7 +142,7 @@ public class Drone {
      * The real problem is Travelling Thief Problem, but to reduce complexity,
      * treat it as TSP and use TSP heuristics.
      */
-    public void planDelivery() {
+    private void planDelivery() {
         // TspGreedyOptimisation();  // it seems 2 opt is performing better
         Tsp2OptOptimisation();
     }
@@ -196,15 +194,15 @@ public class Drone {
         for (DeliveryOrder order : this.ordersToDeliver) {
             //allWaypoints.addAll(this.pathfinder.findPath(currentLngLat, order.pickup1).waypoints);
             List<LongLat> pickup1Waypoints =
-                this.pathfinder.findPath(currentLngLat, order.pickup1).waypoints;
+                this.pathfinder.findPath(currentLngLat, order.getPickup1()).waypoints;
             processPathfinderWaypoints(allWaypoints, needToHover, orderNos, order,
                 pickup1Waypoints);
-            currentLngLat = order.pickup1;
-            if (order.pickup2 != null) {
+            currentLngLat = order.getPickup1();
+            if (order.getPickup2() != null) {
                 List<LongLat> pickup2Waypoints = this.pathfinder.findPath(currentLngLat,
-                    order.pickup2).waypoints;
+                    order.getPickup2()).waypoints;
                 processPathfinderWaypoints(allWaypoints, needToHover, orderNos, order, pickup2Waypoints);
-                currentLngLat = order.pickup2;
+                currentLngLat = order.getPickup2();
             }
             List<LongLat> deliveryWaypoints =
                 pathfinder.findPath(currentLngLat, order.deliveryLngLat).waypoints;
@@ -373,11 +371,11 @@ public class Drone {
         double ratio = Double.POSITIVE_INFINITY;
         DeliveryOrder mostIneffectiveOrder = null;
         for (DeliveryOrder order : this.ordersToDeliver) {
-            double totalDistance = currentPosition.distanceTo(order.pickup1);
-            currentPosition = order.pickup1;
-            if (order.pickup2 != null) {
-                totalDistance += currentPosition.distanceTo(order.pickup2);
-                currentPosition = order.pickup2;
+            double totalDistance = currentPosition.distanceTo(order.getPickup1());
+            currentPosition = order.getPickup1();
+            if (order.getPickup2() != null) {
+                totalDistance += currentPosition.distanceTo(order.getPickup2());
+                currentPosition = order.getPickup2();
             }
             totalDistance += currentPosition.distanceTo(order.deliveryLngLat);
             currentPosition = order.deliveryLngLat;

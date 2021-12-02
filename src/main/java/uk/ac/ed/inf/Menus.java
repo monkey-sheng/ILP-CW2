@@ -14,13 +14,11 @@ import java.util.Map;
  * Should only be instantiated once per drone/webserver.
  */
 public class Menus {
-    public final int DELIVERY_CHARGE = 50;  // +50p for every delivery
+    private static final int DELIVERY_CHARGE = 50;  // +50p for every delivery
     
     // format this endpoint with the corresponding port
     // according to piazza, this will always be localhost
-    public static final String menusEndpoint = "http://%s:%s/menus/menus.json";
-    // the formatted URL for menus.json
-    public final String menusURL;
+    private static final String menusEndpoint = "http://%s:%s/menus/menus.json";
     
     // according to a piazza question, "each item is sold by exactly one shop".
     // so using item names as keys should not be a problem
@@ -32,8 +30,8 @@ public class Menus {
      * @param port Port of server.
      */
     public Menus(String server, String port) {
-        this.menusURL = String.format(menusEndpoint, server, port);
-        String responseStr = Utils.sendHttpRequest(server, port, menusURL);
+        String responseStr = Utils.sendHttpRequest(server, port,
+            String.format(menusEndpoint, server, port));
 
         // perform deserialization of the response
         Type menuEntryListType = new TypeToken<List<MenuEntry>>() {}.getType();

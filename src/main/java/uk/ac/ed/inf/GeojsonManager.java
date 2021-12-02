@@ -15,9 +15,10 @@ import java.util.List;
  * files, writing geojson files and related geo-computation.
  */
 public class GeojsonManager {
-    public final String server, port;
+    private final String server;
+    private final String port;
     //public static final HttpClient client = HttpClient.newHttpClient();
-    public static final String noFlyZoneEndpoint = "http://%s:%s/buildings/no-fly-zones.geojson";
+    private static final String noFlyZoneEndpoint = "http://%s:%s/buildings/no-fly-zones.geojson";
     private final List<Polygon> noFlyZones;
     private final List<LongLat[]> noFlyZonePerimeters;
     private final List<LongLat> waypoints;  // way points are vertices of no fly zones

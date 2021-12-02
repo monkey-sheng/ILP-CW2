@@ -14,9 +14,9 @@ import java.util.stream.Collectors;
  * Waypoints are in fact vertices of the no fly zone polygons.
  */
 public class AStarPathfinder {
-    public final GeojsonManager geojsonManager;
+    private final GeojsonManager geojsonManager;
     // in the form of graph[ll1][ll2] = distance from ll1 to ll2, +inf if cannot directly go to
-    public final Map<LongLat, Map<LongLat, Double>> waypointGraph;
+    private final Map<LongLat, Map<LongLat, Double>> waypointGraph;
     
     /**
      * Initialises an A* pathfinder.

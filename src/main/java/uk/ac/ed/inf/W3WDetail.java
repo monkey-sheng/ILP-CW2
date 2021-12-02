@@ -1,7 +1,7 @@
 package uk.ac.ed.inf;
 
 
-/*
+/**
  * For marshalling the json response of w3w details.json
  */
 public class W3WDetail {

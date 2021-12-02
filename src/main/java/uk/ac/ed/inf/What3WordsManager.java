@@ -10,8 +10,9 @@ import java.lang.reflect.Type;
  * on the go from webserver.
  */
 public class What3WordsManager {
-    public final String server, port;
-    public static final String w3wEndpoint = "http://%s:%s/words/%s/%s/%s/details.json";
+    private final String server;
+    private final String port;
+    private static final String w3wEndpoint = "http://%s:%s/words/%s/%s/%s/details.json";
     
     /**
      * Constructs an instance which will use the given server and port to fetch data.

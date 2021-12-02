@@ -102,14 +102,14 @@ public class DBManager {
     /**
      * Drop and create the "deliveries" table as asked.
      */
-    public void dropAndCreateTableDeliveries() {
+    private void dropAndCreateTableDeliveries() {
         this.dropAndCreateTable("deliveries", createTableDeliveriesStmt);
     }
     
     /**
      * Drop and create the "flightpath" table as asked.
      */
-    public void dropAndCreateTableFlightpath() {
+    private void dropAndCreateTableFlightpath() {
         this.dropAndCreateTable("flightpath", createTableFlightpathStmt);
     }
     
@@ -177,7 +177,7 @@ public class DBManager {
      * @param flightpaths List of Flightpath representing all the moves it made.
      */
     public void writeFlightpath(List<Flightpath> flightpaths) {
-        // drop and create table done beforehand
+        dropAndCreateTableFlightpath();
         try {
             for (Flightpath flightpath : flightpaths) {
                 PreparedStatement ps = this.dbConn.prepareStatement(
@@ -202,7 +202,7 @@ public class DBManager {
      * @param deliveredOrders A list of orders that have been delivered.
      */
     public void writeDeliveries(List<DeliveryOrder> deliveredOrders) {
-        // drop and create table done beforehand
+        dropAndCreateTableDeliveries();
         System.out.printf("Writing %d delivered orders to database\n", deliveredOrders.size());
         try {
             for (DeliveryOrder order : deliveredOrders) {
