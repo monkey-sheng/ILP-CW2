@@ -76,7 +76,7 @@ public class Drone {
         List<DeliveryOrder> tentativeToDeliver;
         double currentTripDistance = getTripDistance(toDeliver);
         Random random = new Random();
-        for (int i = 0; i < 200; i++) {
+        for (int i = 0; i < Math.min(1000, (int) Math.pow(toDeliver.size(), 2)); i++) {
             int order1Index = random.nextInt(toDeliver.size());
             int order2Index = random.nextInt(toDeliver.size());
             DeliveryOrder order1 = toDeliver.get(order1Index);
