@@ -26,7 +26,7 @@ public class DeliveryOrder {
      * @param customer The customer matriculation string.
      * @param deliverTo The w3w string for delivery location.
      * @param dbManager the DBManager instance to be used to fetch data from database.
-     * @param menus the Menus instance to
+     * @param menus the Menus instance.
      * @param what3WordsManager The what3Words manager responsible for translating w3w string to LongLat
      */
     public DeliveryOrder(String orderNo, Date deliveryDate, String customer, String deliverTo,
@@ -62,7 +62,15 @@ public class DeliveryOrder {
         return pickup1;
     }
     
+    public void setPickup1(LongLat pickup1) {
+        this.pickup1 = pickup1;
+    }
+    
     public LongLat getPickup2() {
         return pickup2;
+    }
+    
+    public void setPickup2(LongLat pickup2) {
+        this.pickup1 = pickup2;
     }
 }

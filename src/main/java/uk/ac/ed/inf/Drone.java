@@ -73,6 +73,7 @@ public class Drone {
      */
     private void Tsp2OptOptimisation() {
         List<DeliveryOrder> toDeliver = new ArrayList<>(this.ordersToDeliver);
+        // this should guarantee to be closer to global optimum no matter what
         List<DeliveryOrder> tentativeToDeliver;
         double currentTripDistance = getTripDistance(toDeliver);
         Random random = new Random();
@@ -82,6 +83,7 @@ public class Drone {
             DeliveryOrder order1 = toDeliver.get(order1Index);
             DeliveryOrder order2 = toDeliver.get(order2Index);
             tentativeToDeliver = new ArrayList<>(toDeliver);
+            // perform the order swap tentatively
             tentativeToDeliver.set(order1Index, order2);
             tentativeToDeliver.set(order2Index, order1);
             double newTripDistance = getTripDistance(tentativeToDeliver);
@@ -92,6 +94,29 @@ public class Drone {
             }
         }
         this.ordersToDeliver = toDeliver;
+    }
+    
+    /**
+     * For orders with the second pickup location, see if swapping the two produces better trip
+     * distance, if so, make the swap, if not or if no second pickup location present, do nothing.
+     * It is guaranteed to be globally better if the inner order of pickup locations can be
+     * optimised to be locally better.
+     */
+    private void optimisePickupLocationsForOrders() {
+        for (DeliveryOrder order : this.ordersToDeliver) {
+            if (order.getPickup2() != null) {
+                LongLat pickup1 = order.getPickup1();
+                LongLat pickup2 = order.getPickup2();
+                double originalInnerDistance = pathfinder.findPath(pickup1, pickup2).distance +
+                    pathfinder.findPath(pickup2, order.deliveryLngLat).distance;
+                double innerSwappedDistance = pathfinder.findPath(pickup2, pickup1).distance +
+                    pathfinder.findPath(pickup1, order.deliveryLngLat).distance;
+                if (innerSwappedDistance < originalInnerDistance) {
+                    order.setPickup1(pickup2);
+                    order.setPickup2(pickup1);
+                }
+            }
+        }
     }
     
     /**
@@ -117,23 +142,27 @@ public class Drone {
     
     /**
      * @param ordersToDeliver The list of orders to calculate total trip (euclidean) distance
-     * @return The total trip (euclidean) distance
+     * @return The total trip (euclidean) distance to follow the computed waypoints
      */
     private double getTripDistance(List<DeliveryOrder> ordersToDeliver) {
         LongLat currentPosition = APPLETON_TOWER;
         double distance = 0;
         for (DeliveryOrder order : ordersToDeliver) {
-            double cost = currentPosition.distanceTo(order.getPickup1());
+            double cost = 0;
+            double distance1 = pathfinder.findPath(currentPosition, order.getPickup1()).distance;
             currentPosition = order.getPickup1();
+            cost += distance1;
             if (order.getPickup2() != null) {
-                cost += currentPosition.distanceTo(order.getPickup2());
+                double distance2 =
+                    pathfinder.findPath(currentPosition, order.getPickup2()).distance;
                 currentPosition = order.getPickup2();
+                cost += distance2;
             }
-            cost += currentPosition.distanceTo(order.deliveryLngLat);
+            cost += pathfinder.findPath(currentPosition, order.deliveryLngLat).distance;
             currentPosition = order.deliveryLngLat;
             distance += cost;
         }
-        return distance + currentPosition.distanceTo(APPLETON_TOWER);  // get back
+        return distance + pathfinder.findPath(currentPosition, APPLETON_TOWER).distance;  // get back
     }
     
     /**
@@ -314,6 +343,7 @@ public class Drone {
      */
     public void performDeliveries() {
         getAllOrders();
+        optimisePickupLocationsForOrders();
         planDelivery();  // performed TSP greedy optimisation here
 
         List<Flightpath> flightpaths = tryDeliveringOrders();

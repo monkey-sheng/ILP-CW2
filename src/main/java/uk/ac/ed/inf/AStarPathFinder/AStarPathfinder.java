@@ -17,6 +17,11 @@ public class AStarPathfinder {
     private final GeojsonManager geojsonManager;
     // in the form of graph[ll1][ll2] = distance from ll1 to ll2, +inf if cannot directly go to
     private final Map<LongLat, Map<LongLat, Double>> waypointGraph;
+    // map[start][goal] -> the cached pathGraph
+    private final Map<LongLat, Map<LongLat, Map<LongLat, Map<LongLat, Double>>>> pathGraphCache =
+        new HashMap<>();
+    // map[start][goal] -> the cached pathfinderResult
+    private final Map<LongLat, Map<LongLat, PathfinderResult>> findPathCache = new HashMap<>();
     
     /**
      * Initialises an A* pathfinder.
@@ -96,6 +101,14 @@ public class AStarPathfinder {
      * point1 to point2.
      */
     private Map<LongLat, Map<LongLat, Double>> getPathGraph(LongLat start, LongLat goal) {
+        if (this.pathGraphCache.containsKey(start)) {
+            if (pathGraphCache.get(start).containsKey(goal)) {
+                return pathGraphCache.get(start).get(goal);
+            }
+        }
+        else {
+            this.pathGraphCache.put(start, new HashMap<>());
+        }
         List<LongLat> waypoints = geojsonManager.getWaypoints();
         // make a copy then add start and goal nodes to it
         Map<LongLat, Map<LongLat, Double>> pathGraph =
@@ -120,6 +133,8 @@ public class AStarPathfinder {
         // connect with self
         pathGraph.get(start).put(start, 0.0);
         pathGraph.get(goal).put(goal, 0.0);
+        
+        this.pathGraphCache.get(start).put(goal, pathGraph);
         return pathGraph;
     }
     
@@ -155,6 +170,14 @@ public class AStarPathfinder {
      * @return result containing the distance/cost, and list of way points in between.
      */
     public PathfinderResult findPath(LongLat start, LongLat goal) {
+        if (this.findPathCache.containsKey(start)) {
+            if (findPathCache.get(start).containsKey(goal)) {
+                return findPathCache.get(start).get(goal);
+            }
+        }
+        else {
+            this.findPathCache.put(start, new HashMap<>());
+        }
         // this would be waypointGraph with start and goal node added
         Map<LongLat, Map<LongLat, Double>> pathGraph = getPathGraph(start, goal);
         Map<LongLat, Double> closedSet = new HashMap<>();
@@ -187,7 +210,10 @@ public class AStarPathfinder {
             thisNode = cameFrom.get(thisNode);
         }
         Collections.reverse(path);  // it is now in the correct visiting order
-        return new PathfinderResult(closedSet.get(goal), path);
+        
+        PathfinderResult result = new PathfinderResult(closedSet.get(goal), path);
+        this.findPathCache.get(start).put(goal, result);
+        return result;
     }
 }
 
